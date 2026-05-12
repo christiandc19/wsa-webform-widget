@@ -1,20 +1,20 @@
 <!DOCTYPE html>
 <html>
+
 <head>
     <meta charset="UTF-8" />
     <title>WSA Webform Test</title>
     <link rel="stylesheet" href="/wsa-webform-widget.css" />
+    <!-- Google reCAPTCHA v3 script -->
+    <script src="https://www.google.com/recaptcha/api.js?render=6Lf4UdssAAAAAOChTYz1U_qvNYLK9a2fkTVJ55lI"></script>
 </head>
+
 <body style="font-family: Arial; padding: 40px;">
-
   <h1>Webform Widget Test</h1>
-
   <div id="wsa-form"></div>
-
   <!-- Load built widget -->
   <script src="/widget.js"></script>
-
-<script>
+  <script>
   /*
     White-label webform embed test.
 
@@ -31,9 +31,10 @@
     target: "#wsa-form",
     clientKey: "evergreen-heights",
     formKey: "senior-living-contact",
-    source: "webform"
+    source: "webform",
+    recaptchaSiteKey: "6Lf4UdssAAAAAOChTYz1U_qvNYLK9a2fkTVJ55lI"
   });
-</script>
-
+  </script>
 </body>
+
 </html>

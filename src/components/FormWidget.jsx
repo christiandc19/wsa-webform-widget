@@ -21,27 +21,20 @@ const timeOptions = [
   "5:00 PM",
 ];
 
-  // export default function FormWidget({
-  //   clientKey = "evergreen-heights",
-  //   formKey = "senior-living-contact",
-  //   apiUrl = "http://localhost:5297/api/Leads",
-  //   apiKey = "l43fK4WYUQ8Sui4lGh633A",
-  //   source = "webform",
-  //   recaptchaSiteKey = "",
-  // }) {
+  export default function FormWidget({
+    // White-label client identifier.
+    clientKey = "evergreen-heights",
 
-export default function FormWidget({
-  // White-label client identifier.
-  // Example: "evergreen-heights"
-  clientKey = "evergreen-heights",
+    // White-label form identifier.
+    formKey = "senior-living-contact",
 
-  // White-label form identifier.
-  // Example: "senior-living-contact"
-  formKey = "senior-living-contact",
+    // Lead source shown in your dashboard.
+    source = "webform",
 
-  // Lead source shown in your dashboard.
-  source = "webform",
-}) {
+    // Public Google reCAPTCHA site key.
+    // Safe to expose. The secret key stays on the backend.
+    recaptchaSiteKey = "",
+  }) {
 
 
   const [form, setForm] = useState({
@@ -117,6 +110,29 @@ export default function FormWidget({
 
     try {
 
+    // Default empty token
+    let recaptchaToken = "";
+
+    /*
+      Generate a Google reCAPTCHA v3 token before submitting.
+      grecaptcha.ready() does not return a normal Promise,
+      so we wrap it manually.
+    */
+    if (recaptchaSiteKey && window.grecaptcha) {
+      recaptchaToken = await new Promise((resolve, reject) => {
+        window.grecaptcha.ready(() => {
+          window.grecaptcha
+            .execute(recaptchaSiteKey, { action: "webform_submit" })
+            .then(resolve)
+            .catch(reject);
+        });
+      });
+    }
+
+console.log("Generated reCAPTCHA token:", recaptchaToken);
+
+      console.log("reCAPTCHA token:", recaptchaToken);
+
             /*
         IMPORTANT:
         The widget now talks to a PUBLIC backend endpoint.
@@ -145,6 +161,7 @@ export default function FormWidget({
 
           source,
           formKey,
+          recaptchaToken,
           clientKey,
           
           // NEW: Save a readable summary on the Lead record.
