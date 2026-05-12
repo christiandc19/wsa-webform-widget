@@ -14,16 +14,26 @@
   <!-- Load built widget -->
   <script src="/widget.js"></script>
 
-  <script>
-    window.WebSmartAssistantForm({
-      target: "#wsa-form",
-      clientKey: "evergreen-heights",
-      formKey: "senior-living-contact",
-      apiUrl: "http://localhost:5297/api/Leads",
-      apiKey: "l43fK4WYUQ8Sui4lGh633A",
-      source: "webform"
-    });
-  </script>
+<script>
+  /*
+    White-label webform embed test.
+
+    IMPORTANT:
+    Do not place apiUrl or apiKey here anymore.
+
+    The widget should only receive public white-label settings:
+    - target
+    - clientKey
+    - formKey
+    - source
+  */
+  window.WebSmartAssistantForm({
+    target: "#wsa-form",
+    clientKey: "evergreen-heights",
+    formKey: "senior-living-contact",
+    source: "webform"
+  });
+</script>
 
 </body>
 </html>

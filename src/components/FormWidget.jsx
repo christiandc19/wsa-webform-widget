@@ -21,14 +21,28 @@ const timeOptions = [
   "5:00 PM",
 ];
 
-  export default function FormWidget({
-    clientKey = "evergreen-heights",
-    formKey = "senior-living-contact",
-    apiUrl = "http://localhost:5297/api/Leads",
-    apiKey = "l43fK4WYUQ8Sui4lGh633A",
-    source = "webform",
-    recaptchaSiteKey = "",
-  }) {
+  // export default function FormWidget({
+  //   clientKey = "evergreen-heights",
+  //   formKey = "senior-living-contact",
+  //   apiUrl = "http://localhost:5297/api/Leads",
+  //   apiKey = "l43fK4WYUQ8Sui4lGh633A",
+  //   source = "webform",
+  //   recaptchaSiteKey = "",
+  // }) {
+
+export default function FormWidget({
+  // White-label client identifier.
+  // Example: "evergreen-heights"
+  clientKey = "evergreen-heights",
+
+  // White-label form identifier.
+  // Example: "senior-living-contact"
+  formKey = "senior-living-contact",
+
+  // Lead source shown in your dashboard.
+  source = "webform",
+}) {
+
 
   const [form, setForm] = useState({
     firstName: "",
@@ -103,21 +117,25 @@ const timeOptions = [
 
     try {
 
-      // NEW: Generate a reCAPTCHA token before submitting.
-      // The backend will verify this token with Google.
-      let recaptchaToken = "";
+            /*
+        IMPORTANT:
+        The widget now talks to a PUBLIC backend endpoint.
 
-      if (recaptchaSiteKey && window.grecaptcha) {
-        recaptchaToken = await window.grecaptcha.execute(recaptchaSiteKey, {
-          action: "webform_submit",
-        });
-      }
+        The frontend no longer knows:
+        - API keys
+        - secret backend configuration
 
-      const response = await fetch(apiUrl, {
+        The backend will securely handle:
+        - API authentication
+        - lead validation
+        - client validation
+      */
+      const response = await fetch(
+        "https://api.websmartassistant.com/api/public/webform-submit",
+        {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "X-Api-Key": apiKey, // DEV ONLY: move to config/env before production
         },
         body: JSON.stringify({
           firstName: form.firstName,
@@ -128,7 +146,6 @@ const timeOptions = [
           source,
           formKey,
           clientKey,
-          recaptchaToken,
           
           // NEW: Save a readable summary on the Lead record.
           message: dashboardMessage,
@@ -144,9 +161,13 @@ const timeOptions = [
         }),
       });
 
-      if (!response.ok) {
-        throw new Error("Failed to submit");
-      }
+        if (!response.ok) {
+          /*
+            This usually means the backend endpoint does not exist yet
+            or the backend rejected the request.
+          */
+          throw new Error(`Failed to submit. Status: ${response.status}`);
+        }
 
       setSuccess(true);
       setForm({
@@ -163,11 +184,17 @@ const timeOptions = [
       });
     } catch (error) {
       console.error(error);
-      alert("Something went wrong.");
+      alert(
+        "The form could not be submitted yet. The widget loaded correctly, but the backend endpoint still needs to be created."
+      );
+    } finally {
+      /*
+        Always stop the loading state after the request finishes,
+        even if the backend returns an error.
+      */
+      setLoading(false);
     }
-
-    setLoading(false);
-  };
+    };
 
   if (success) {
     return (
