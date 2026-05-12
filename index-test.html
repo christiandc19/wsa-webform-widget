@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8" />
+    <title>WSA Webform Test</title>
+    <link rel="stylesheet" href="/wsa-webform-widget.css" />
+</head>
+<body style="font-family: Arial; padding: 40px;">
+
+  <h1>Webform Widget Test</h1>
+
+  <div id="wsa-form"></div>
+
+  <!-- Load built widget -->
+  <script src="/widget.js"></script>
+
+  <script>
+    window.WebSmartAssistantForm({
+      target: "#wsa-form",
+      clientKey: "evergreen-heights",
+      formKey: "senior-living-contact",
+      apiUrl: "http://localhost:5297/api/Leads",
+      apiKey: "l43fK4WYUQ8Sui4lGh633A",
+      source: "webform"
+    });
+  </script>
+
+</body>
+</html>

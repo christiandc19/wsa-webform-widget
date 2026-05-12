@@ -1,0 +1,343 @@
+import { useMemo, useState } from "react";
+import "./FormWidget.css";
+
+const timeOptions = [
+  "9:00 AM",
+  "9:30 AM",
+  "10:00 AM",
+  "10:30 AM",
+  "11:00 AM",
+  "11:30 AM",
+  "12:00 PM",
+  "12:30 PM",
+  "1:00 PM",
+  "1:30 PM",
+  "2:00 PM",
+  "2:30 PM",
+  "3:00 PM",
+  "3:30 PM",
+  "4:00 PM",
+  "4:30 PM",
+  "5:00 PM",
+];
+
+  export default function FormWidget({
+    clientKey = "evergreen-heights",
+    formKey = "senior-living-contact",
+    apiUrl = "http://localhost:5297/api/Leads",
+    apiKey = "l43fK4WYUQ8Sui4lGh633A",
+    source = "webform",
+    recaptchaSiteKey = "",
+  }) {
+
+  const [form, setForm] = useState({
+    firstName: "",
+    lastName: "",
+    email: "",
+    phone: "",
+    inquiryFor: "",
+    connectPreference: "",
+    lifestyleInterest: "",
+    preferredDate: "",
+    preferredTime: "",
+    message: "",
+  });
+
+  const [loading, setLoading] = useState(false);
+  const [success, setSuccess] = useState(false);
+
+  const needsLifestyle = form.connectPreference === "Download a Brochure";
+
+  const needsAppointment =
+    form.connectPreference === "Schedule A Visit" ||
+    form.connectPreference === "Speak to an Advisor";
+
+  const needsMessage =
+    form.connectPreference === "Schedule A Visit" ||
+    form.connectPreference === "Speak to an Advisor" ||
+    form.connectPreference === "Career Opportunities" ||
+    form.connectPreference === "Vendor/Volunteer/Other";
+
+  const dashboardMessage = useMemo(() => {
+    return [
+      "Webform Submission",
+      "",
+      `I am inquiring for: ${form.inquiryFor || "N/A"}`,
+      `How would you like to connect?: ${form.connectPreference || "N/A"}`,
+      needsLifestyle
+        ? `Lifestyle Interest: ${form.lifestyleInterest || "N/A"}`
+        : null,
+      needsAppointment ? `Preferred Date: ${form.preferredDate || "N/A"}` : null,
+      needsAppointment ? `Preferred Time: ${form.preferredTime || "N/A"}` : null,
+      form.message ? `Message: ${form.message}` : null,
+    ]
+      .filter(Boolean)
+      .join("\n");
+  }, [form, needsLifestyle, needsAppointment]);
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+
+    setForm((current) => {
+      const updated = {
+        ...current,
+        [name]: value,
+      };
+
+      // NEW: Clear conditional fields when the connect preference changes.
+      // This prevents old hidden answers from being submitted by accident.
+      if (name === "connectPreference") {
+        updated.lifestyleInterest = "";
+        updated.preferredDate = "";
+        updated.preferredTime = "";
+        updated.message = "";
+      }
+
+      return updated;
+    });
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+
+    try {
+
+      // NEW: Generate a reCAPTCHA token before submitting.
+      // The backend will verify this token with Google.
+      let recaptchaToken = "";
+
+      if (recaptchaSiteKey && window.grecaptcha) {
+        recaptchaToken = await window.grecaptcha.execute(recaptchaSiteKey, {
+          action: "webform_submit",
+        });
+      }
+
+      const response = await fetch(apiUrl, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "X-Api-Key": apiKey, // DEV ONLY: move to config/env before production
+        },
+        body: JSON.stringify({
+          firstName: form.firstName,
+          lastName: form.lastName,
+          email: form.email,
+          phone: form.phone,
+
+          source,
+          formKey,
+          clientKey,
+          recaptchaToken,
+          
+          // NEW: Save a readable summary on the Lead record.
+          message: dashboardMessage,
+
+          // NEW: Also save the webform summary as a conversation
+          // so it appears in the dashboard message panel.
+          conversations: [
+            {
+              message: dashboardMessage,
+              sender: "user",
+            },
+          ],
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to submit");
+      }
+
+      setSuccess(true);
+      setForm({
+        firstName: "",
+        lastName: "",
+        email: "",
+        phone: "",
+        inquiryFor: "",
+        connectPreference: "",
+        lifestyleInterest: "",
+        preferredDate: "",
+        preferredTime: "",
+        message: "",
+      });
+    } catch (error) {
+      console.error(error);
+      alert("Something went wrong.");
+    }
+
+    setLoading(false);
+  };
+
+  if (success) {
+    return (
+      <div className="wsa-form-success">
+        ✅ Thank you! We’ll be in touch.
+      </div>
+    );
+  }
+
+  return (
+    <form className="wsa-form-card" onSubmit={handleSubmit}>
+      <div className="wsa-form-header">
+        <div className="wsa-form-icon">WSA</div>
+
+        <div>
+          <h2>Contact Us</h2>
+          <p>Tell us what you need, and our team will follow up with the right next step.</p>
+        </div>
+      </div>
+
+      <div className="wsa-form-grid">
+        <div className="wsa-form-field">
+          <label>First Name *</label>
+          <input
+            name="firstName"
+            placeholder="First Name"
+            value={form.firstName}
+            onChange={handleChange}
+            required
+          />
+        </div>
+
+        <div className="wsa-form-field">
+          <label>Last Name *</label>
+          <input
+            name="lastName"
+            placeholder="Last Name"
+            value={form.lastName}
+            onChange={handleChange}
+            required
+          />
+        </div>
+
+        <div className="wsa-form-field">
+          <label>Email Address *</label>
+          <input
+            name="email"
+            placeholder="Email Address"
+            type="email"
+            value={form.email}
+            onChange={handleChange}
+            required
+          />
+        </div>
+
+        <div className="wsa-form-field">
+          <label>Phone Number *</label>
+          <input
+            name="phone"
+            placeholder="Phone Number"
+            value={form.phone}
+            onChange={handleChange}
+            required
+          />
+        </div>
+
+        <div className="wsa-form-field">
+          <label>I am inquiring for *</label>
+          <select
+            name="inquiryFor"
+            value={form.inquiryFor}
+            onChange={handleChange}
+            required
+          >
+            <option value="">Select one</option>
+            <option value="Self">Self</option>
+            <option value="Parents">Parents</option>
+            <option value="Spouse">Spouse</option>
+            <option value="Relative">Relative</option>
+            <option value="Friend">Friend</option>
+            <option value="Others">Others</option>
+          </select>
+        </div>
+
+        <div className="wsa-form-field">
+          <label>How would you like to connect? *</label>
+          <select
+            name="connectPreference"
+            value={form.connectPreference}
+            onChange={handleChange}
+            required
+          >
+            <option value="">Select one</option>
+            <option value="Download a Brochure">Download a Brochure</option>
+            <option value="Schedule A Visit">Schedule A Visit</option>
+            <option value="Speak to an Advisor">Speak to an Advisor</option>
+            <option value="Career Opportunities">Career Opportunities</option>
+            <option value="Vendor/Volunteer/Other">Vendor/Volunteer/Other</option>
+          </select>
+        </div>
+
+        {needsLifestyle && (
+          <div className="wsa-form-field full">
+            <label>Which lifestyle are you most interested in? *</label>
+            <select
+              name="lifestyleInterest"
+              value={form.lifestyleInterest}
+              onChange={handleChange}
+              required
+            >
+              <option value="">Select lifestyle</option>
+              <option value="Independent Living">Independent Living</option>
+              <option value="Assisted Living">Assisted Living</option>
+              <option value="Memory Care">Memory Care</option>
+            </select>
+          </div>
+        )}
+
+        {needsAppointment && (
+          <>
+            <div className="wsa-form-field">
+              <label>Preferred Date *</label>
+              <input
+                name="preferredDate"
+                type="date"
+                value={form.preferredDate}
+                onChange={handleChange}
+                required
+              />
+            </div>
+
+            <div className="wsa-form-field">
+              <label>Preferred Time *</label>
+              <select
+                name="preferredTime"
+                value={form.preferredTime}
+                onChange={handleChange}
+                required
+              >
+                <option value="">Select time</option>
+                {timeOptions.map((time) => (
+                  <option key={time} value={time}>
+                    {time}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </>
+        )}
+
+        {needsMessage && (
+          <div className="wsa-form-field full">
+            <label>Message</label>
+            <textarea
+              name="message"
+              placeholder="Add any helpful details..."
+              value={form.message}
+              onChange={handleChange}
+            />
+          </div>
+        )}
+      </div>
+
+      <button className="wsa-form-submit" type="submit" disabled={loading}>
+        {loading ? "Submitting..." : "Submit"}
+      </button>
+
+      <p className="wsa-form-note">
+        Your information is secure and will never be shared.
+      </p>
+    </form>
+  );
+}
