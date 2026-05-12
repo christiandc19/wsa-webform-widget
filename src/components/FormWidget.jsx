@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import "./FormWidget.css";
+import { getWebformClient } from "../webforms/registry";
 
 const timeOptions = [
   "9:00 AM",
@@ -30,11 +31,24 @@ const timeOptions = [
 
     // Lead source shown in your dashboard.
     source = "webform",
-
-    // Public Google reCAPTCHA site key.
-    // Safe to expose. The secret key stays on the backend.
-    recaptchaSiteKey = "",
   }) {
+
+
+      /*
+    Load white-label client settings from the registry.
+
+    This is what makes the webform work like your chatbot/survey setup:
+    clientKey + formKey control the branding, security, and form settings.
+  */
+  const clientConfig = getWebformClient(clientKey);
+  const formConfig = clientConfig.forms?.[formKey] || {};
+
+  const branding = clientConfig.branding || {};
+  const theme = clientConfig.theme || {};
+  const security = clientConfig.security || {};
+
+  const recaptchaSiteKey = security.recaptchaSiteKey || "";
+
 
 
   const [form, setForm] = useState({
@@ -148,6 +162,8 @@ console.log("Generated reCAPTCHA token:", recaptchaToken);
       */
       const response = await fetch(
         "http://localhost:5297/api/public/webform-submit",
+        // "https://api.websmartassistant.com/api/public/webform-submit",
+
         {
         method: "POST",
         headers: {
@@ -216,7 +232,7 @@ console.log("Generated reCAPTCHA token:", recaptchaToken);
   if (success) {
     return (
       <div className="wsa-form-success">
-        ✅ Thank you! We’ll be in touch.
+        ✅ {formConfig.successMessage || "Thank you! We’ll be in touch."}
       </div>
     );
   }
@@ -224,11 +240,21 @@ console.log("Generated reCAPTCHA token:", recaptchaToken);
   return (
     <form className="wsa-form-card" onSubmit={handleSubmit}>
       <div className="wsa-form-header">
-        <div className="wsa-form-icon">WSA</div>
+        <div
+          className="wsa-form-icon"
+          style={{
+            backgroundColor: theme.primaryColor,
+          }}
+        >
+          {branding.logoText || "WSA"}
+        </div>
 
         <div>
-          <h2>Contact Us</h2>
-          <p>Tell us what you need, and our team will follow up with the right next step.</p>
+          <h2>{formConfig.title || branding.title || "Contact Us"}</h2>
+          <p>
+            {branding.subtitle ||
+              "Tell us what you need, and our team will follow up with the right next step."}
+          </p>
         </div>
       </div>
 
@@ -375,8 +401,15 @@ console.log("Generated reCAPTCHA token:", recaptchaToken);
         )}
       </div>
 
-      <button className="wsa-form-submit" type="submit" disabled={loading}>
-        {loading ? "Submitting..." : "Submit"}
+      <button
+        className="wsa-form-submit"
+        type="submit"
+        disabled={loading}
+        style={{
+          backgroundColor: theme.primaryColor,
+        }}
+      >
+        {loading ? "Submitting..." : formConfig.submitLabel || "Submit"}
       </button>
 
       <p className="wsa-form-note">

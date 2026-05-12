@@ -10,15 +10,14 @@ export default function App() {
       }}
     >
       {/*
-        Local React testing only.
+        Local React testing.
 
-        In real WordPress embeds, this value comes from:
-        window.WebSmartAssistantForm({ recaptchaSiteKey: "..." })
+        The form now loads branding, theme, and reCAPTCHA site key
+        from src/webforms/registry.js using clientKey + formKey.
       */}
       <FormWidget
         clientKey="evergreen-heights"
         formKey="senior-living-contact"
-        recaptchaSiteKey="6Lf4UdssAAAAAOChTYz1U_qvNYLK9a2fkTVJ55lI"
       />
     </div>
   );
