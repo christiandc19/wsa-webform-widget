@@ -131,7 +131,7 @@ export default function FormWidget({
         - client validation
       */
       const response = await fetch(
-        "https://api.websmartassistant.com/api/public/webform-submit",
+        "http://localhost:5297/api/public/webform-submit",
         {
         method: "POST",
         headers: {
