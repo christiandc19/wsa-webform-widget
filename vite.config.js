@@ -26,11 +26,13 @@ export default defineConfig({
           with chatbot-widget.css and survey-widget.css
         */
         assetFileNames: (assetInfo) => {
-          if (assetInfo.name?.endsWith(".css")) {
+          const assetName = assetInfo.name || "";
+
+          if (assetName.endsWith(".css")) {
             return "webform-widget.css";
           }
 
-          return assetInfo.name;
+          return "assets/[name]-[hash][extname]";
         },
       },
     },
