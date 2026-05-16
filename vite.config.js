@@ -12,8 +12,29 @@ export default defineConfig({
     lib: {
       entry: "src/widget.jsx",
       name: "WebSmartAssistantForm",
-      fileName: () => "widget.js",
+
+      // Final JS output name
+      fileName: () => "webform-widget.js",
+
       formats: ["iife"],
+    },
+
+    rollupOptions: {
+      output: {
+        /*
+          Force the CSS bundle name so uploads stay consistent
+          with chatbot-widget.css and survey-widget.css
+        */
+        assetFileNames: (assetInfo) => {
+          const assetName = assetInfo.name || "";
+
+          if (assetName.endsWith(".css")) {
+            return "webform-widget.css";
+          }
+
+          return "assets/[name]-[hash][extname]";
+        },
+      },
     },
   },
 });

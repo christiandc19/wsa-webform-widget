@@ -9,6 +9,12 @@ export default function App() {
         justifyContent: "center",
       }}
     >
+      {/*
+        Local React testing.
+
+        The form now loads branding, theme, and reCAPTCHA site key
+        from src/webforms/registry.js using clientKey + formKey.
+      */}
       <FormWidget
         clientKey="evergreen-heights"
         formKey="senior-living-contact"

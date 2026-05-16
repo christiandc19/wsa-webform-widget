@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import "./FormWidget.css";
+import { getWebformClient } from "../webforms/registry";
 
 const timeOptions = [
   "9:00 AM",
@@ -22,13 +23,33 @@ const timeOptions = [
 ];
 
   export default function FormWidget({
+    // White-label client identifier.
     clientKey = "evergreen-heights",
+
+    // White-label form identifier.
     formKey = "senior-living-contact",
-    apiUrl = "http://localhost:5297/api/Leads",
-    apiKey = "l43fK4WYUQ8Sui4lGh633A",
+
+    // Lead source shown in your dashboard.
     source = "webform",
-    recaptchaSiteKey = "",
   }) {
+
+
+      /*
+    Load white-label client settings from the registry.
+
+    This is what makes the webform work like your chatbot/survey setup:
+    clientKey + formKey control the branding, security, and form settings.
+  */
+  const clientConfig = getWebformClient(clientKey);
+  const formConfig = clientConfig.forms?.[formKey] || {};
+
+  const branding = clientConfig.branding || {};
+  const theme = clientConfig.theme || {};
+  const security = clientConfig.security || {};
+
+  const recaptchaSiteKey = security.recaptchaSiteKey || "";
+
+
 
   const [form, setForm] = useState({
     firstName: "",
@@ -103,21 +124,50 @@ const timeOptions = [
 
     try {
 
-      // NEW: Generate a reCAPTCHA token before submitting.
-      // The backend will verify this token with Google.
-      let recaptchaToken = "";
+    // Default empty token
+    let recaptchaToken = "";
 
-      if (recaptchaSiteKey && window.grecaptcha) {
-        recaptchaToken = await window.grecaptcha.execute(recaptchaSiteKey, {
-          action: "webform_submit",
+    /*
+      Generate a Google reCAPTCHA v3 token before submitting.
+      grecaptcha.ready() does not return a normal Promise,
+      so we wrap it manually.
+    */
+    if (recaptchaSiteKey && window.grecaptcha) {
+      recaptchaToken = await new Promise((resolve, reject) => {
+        window.grecaptcha.ready(() => {
+          window.grecaptcha
+            .execute(recaptchaSiteKey, { action: "webform_submit" })
+            .then(resolve)
+            .catch(reject);
         });
-      }
+      });
+    }
 
-      const response = await fetch(apiUrl, {
+console.log("Generated reCAPTCHA token:", recaptchaToken);
+
+      console.log("reCAPTCHA token:", recaptchaToken);
+
+            /*
+        IMPORTANT:
+        The widget now talks to a PUBLIC backend endpoint.
+
+        The frontend no longer knows:
+        - API keys
+        - secret backend configuration
+
+        The backend will securely handle:
+        - API authentication
+        - lead validation
+        - client validation
+      */
+      const response = await fetch(
+        "http://localhost:5297/api/public/webform-submit",
+        // "https://api.websmartassistant.com/api/public/webform-submit",
+
+        {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "X-Api-Key": apiKey, // DEV ONLY: move to config/env before production
         },
         body: JSON.stringify({
           firstName: form.firstName,
@@ -127,8 +177,8 @@ const timeOptions = [
 
           source,
           formKey,
-          clientKey,
           recaptchaToken,
+          clientKey,
           
           // NEW: Save a readable summary on the Lead record.
           message: dashboardMessage,
@@ -144,9 +194,13 @@ const timeOptions = [
         }),
       });
 
-      if (!response.ok) {
-        throw new Error("Failed to submit");
-      }
+        if (!response.ok) {
+          /*
+            This usually means the backend endpoint does not exist yet
+            or the backend rejected the request.
+          */
+          throw new Error(`Failed to submit. Status: ${response.status}`);
+        }
 
       setSuccess(true);
       setForm({
@@ -163,28 +217,42 @@ const timeOptions = [
       });
     } catch (error) {
       console.error(error);
-      alert("Something went wrong.");
+      alert(
+        "The form could not be submitted yet. The widget loaded correctly, but the backend endpoint still needs to be created."
+      );
+    } finally {
+      /*
+        Always stop the loading state after the request finishes,
+        even if the backend returns an error.
+      */
+      setLoading(false);
     }
-
-    setLoading(false);
-  };
+    };
 
   if (success) {
     return (
       <div className="wsa-form-success">
-        ✅ Thank you! We’ll be in touch.
+        ✅ {formConfig.successMessage || "Thank you! We’ll be in touch."}
       </div>
     );
   }
 
   return (
-    <form className="wsa-form-card" onSubmit={handleSubmit}>
+      <form
+        className="wsa-form-card"
+        onSubmit={handleSubmit}
+        style={{
+          "--wsa-form-primary":
+            theme.primaryColor || "#2563eb",
+        }}
+      >
       <div className="wsa-form-header">
-        <div className="wsa-form-icon">WSA</div>
-
         <div>
-          <h2>Contact Us</h2>
-          <p>Tell us what you need, and our team will follow up with the right next step.</p>
+          <h2>{formConfig.title || branding.title || "Contact Us"}</h2>
+          <p>
+            {branding.subtitle ||
+              "Tell us what you need, and our team will follow up with the right next step."}
+          </p>
         </div>
       </div>
 
@@ -331,8 +399,15 @@ const timeOptions = [
         )}
       </div>
 
-      <button className="wsa-form-submit" type="submit" disabled={loading}>
-        {loading ? "Submitting..." : "Submit"}
+      <button
+        className="wsa-form-submit"
+        type="submit"
+        disabled={loading}
+        style={{
+          backgroundColor: theme.primaryColor,
+        }}
+      >
+        {loading ? "Submitting..." : formConfig.submitLabel || "Submit"}
       </button>
 
       <p className="wsa-form-note">
