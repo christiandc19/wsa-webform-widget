@@ -238,17 +238,15 @@ console.log("Generated reCAPTCHA token:", recaptchaToken);
   }
 
   return (
-    <form className="wsa-form-card" onSubmit={handleSubmit}>
+      <form
+        className="wsa-form-card"
+        onSubmit={handleSubmit}
+        style={{
+          "--wsa-form-primary":
+            theme.primaryColor || "#2563eb",
+        }}
+      >
       <div className="wsa-form-header">
-        <div
-          className="wsa-form-icon"
-          style={{
-            backgroundColor: theme.primaryColor,
-          }}
-        >
-          {branding.logoText || "WSA"}
-        </div>
-
         <div>
           <h2>{formConfig.title || branding.title || "Contact Us"}</h2>
           <p>

@@ -14,20 +14,14 @@ const evergreenHeightsWebform = {
     title: "Contact Us",
     subtitle:
       "Tell us what you need, and our team will follow up with the right next step.",
-
-    // For now we keep the WSA text icon.
-    // Later, replace this with a real logo URL if you want.
-    logoText: "WSA",
   },
 
+  // Button Color
   theme: {
-    primaryColor: "#273f80",
-    primaryHoverColor: "#1f3266",
+    primaryColor: "#1b5e3b",
   },
 
   security: {
-    // Public Google reCAPTCHA site key.
-    // Safe to expose. The secret key stays on the backend.
     recaptchaSiteKey: "6Lf4UdssAAAAAOChTYz1U_qvNYLK9a2fkTVJ55lI",
   },
 
