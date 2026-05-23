@@ -1,7 +1,7 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
 import FormWidget from "./components/FormWidget";
-
+import { getWebformClient } from "./webforms/registry";
 /*
   Public WebSmartAssistant WebForm initializer.
 
@@ -20,6 +20,36 @@ window.WebSmartAssistantForm = function (config = {}) {
     formKey = "senior-living-contact",
     source = "webform",
   } = config;
+
+
+  /*
+  Load the white-label client config
+  so we can access the reCAPTCHA site key.
+  */
+  const clientConfig = getWebformClient(clientKey);
+
+  const recaptchaSiteKey =
+    clientConfig?.security?.recaptchaSiteKey;
+
+  /*
+    Dynamically load Google reCAPTCHA Enterprise.
+  */
+  if (
+    recaptchaSiteKey &&
+    !document.querySelector("#wsa-recaptcha-enterprise")
+  ) {
+    const script = document.createElement("script");
+
+    script.id = "wsa-recaptcha-enterprise";
+
+    script.src =
+      `https://www.google.com/recaptcha/enterprise.js?render=${recaptchaSiteKey}`;
+
+    script.async = true;
+    script.defer = true;
+
+    document.head.appendChild(script);
+  }
 
   const container = document.querySelector(target);
 

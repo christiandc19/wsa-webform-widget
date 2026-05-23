@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import "./FormWidget.css";
 import { getWebformClient } from "../webforms/registry";
 
@@ -49,7 +49,21 @@ const timeOptions = [
 
   const recaptchaSiteKey = security.recaptchaSiteKey || "";
 
+  // NEW: Load Google reCAPTCHA Enterprise inside the form too.
+  // This makes it work in local App.jsx testing and in the live widget.
+  useEffect(() => {
+    if (!recaptchaSiteKey) return;
 
+    if (document.querySelector("#wsa-recaptcha-enterprise")) return;
+
+    const script = document.createElement("script");
+    script.id = "wsa-recaptcha-enterprise";
+    script.src = `https://www.google.com/recaptcha/enterprise.js?render=${recaptchaSiteKey}`;
+    script.async = true;
+    script.defer = true;
+
+    document.head.appendChild(script);
+  }, [recaptchaSiteKey]);
 
   const [form, setForm] = useState({
     firstName: "",
@@ -127,18 +141,21 @@ const timeOptions = [
     // Default empty token
     let recaptchaToken = "";
 
-    /*
-      Generate a Google reCAPTCHA v3 token before submitting.
-      grecaptcha.ready() does not return a normal Promise,
-      so we wrap it manually.
-    */
-    if (recaptchaSiteKey && window.grecaptcha) {
+    // Generate a Google reCAPTCHA Enterprise token before submitting.
+    // This matches your Google Cloud key type: Website • Score.
+    if (recaptchaSiteKey && window.grecaptcha?.enterprise) {
       recaptchaToken = await new Promise((resolve, reject) => {
-        window.grecaptcha.ready(() => {
-          window.grecaptcha
-            .execute(recaptchaSiteKey, { action: "webform_submit" })
-            .then(resolve)
-            .catch(reject);
+        window.grecaptcha.enterprise.ready(async () => {
+          try {
+            const token = await window.grecaptcha.enterprise.execute(
+              recaptchaSiteKey,
+              { action: "webform_submit" }
+            );
+
+            resolve(token);
+          } catch (error) {
+            reject(error);
+          }
         });
       });
     }
