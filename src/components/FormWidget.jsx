@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import "./FormWidget.css";
 import { getWebformClient } from "../webforms/registry";
 
@@ -49,7 +49,24 @@ const timeOptions = [
 
   const recaptchaSiteKey = security.recaptchaSiteKey || "";
 
+  // Load Google reCAPTCHA v3 script.
+  useEffect(() => {
+    if (!recaptchaSiteKey) return;
 
+    if (document.querySelector("#wsa-recaptcha")) return;
+
+    const script = document.createElement("script");
+
+    script.id = "wsa-recaptcha";
+
+    script.src =
+      `https://www.google.com/recaptcha/api.js?render=${recaptchaSiteKey}`;
+
+    script.async = true;
+    script.defer = true;
+
+    document.head.appendChild(script);
+  }, [recaptchaSiteKey]);
 
   const [form, setForm] = useState({
     firstName: "",
@@ -127,11 +144,7 @@ const timeOptions = [
     // Default empty token
     let recaptchaToken = "";
 
-    /*
-      Generate a Google reCAPTCHA v3 token before submitting.
-      grecaptcha.ready() does not return a normal Promise,
-      so we wrap it manually.
-    */
+    // Generate a Google reCAPTCHA v3 token before submitting.
     if (recaptchaSiteKey && window.grecaptcha) {
       recaptchaToken = await new Promise((resolve, reject) => {
         window.grecaptcha.ready(() => {
