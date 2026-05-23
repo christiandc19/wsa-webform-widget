@@ -160,9 +160,20 @@ console.log("Generated reCAPTCHA token:", recaptchaToken);
         - lead validation
         - client validation
       */
-      const response = await fetch(
-        "http://localhost:5297/api/public/webform-submit",
-        // "https://api.websmartassistant.com/api/public/webform-submit",
+        // -----------------------------------------
+        // Backend API URL
+        // -----------------------------------------
+        const API_BASE_URL =
+          window.location.hostname === "localhost"
+            ? "http://localhost:5297"
+            : "https://api.websmartassistant.com";
+
+        // -----------------------------------------
+        // Submit webform
+        // -----------------------------------------
+        const response = await fetch(
+          `${API_BASE_URL}/api/public/webform-submit`,
+          
 
         {
         method: "POST",
