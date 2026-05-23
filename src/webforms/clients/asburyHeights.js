@@ -12,7 +12,7 @@ const asburyHeightsWebform = {
   },
 
   security: {
-    recaptchaSiteKey: "6Lf4UdssAAAAAOChTYz1U_qvNYLK9a2fkTVJ55lI",
+    recaptchaSiteKey: "6LcL9fgsAAAAAL9l96dQ_vwVObyLDHXSWQRij3iG",
   },
 
   forms: {

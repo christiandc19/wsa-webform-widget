@@ -49,16 +49,19 @@ const timeOptions = [
 
   const recaptchaSiteKey = security.recaptchaSiteKey || "";
 
-  // NEW: Load Google reCAPTCHA Enterprise inside the form too.
-  // This makes it work in local App.jsx testing and in the live widget.
+  // Load Google reCAPTCHA v3 script.
   useEffect(() => {
     if (!recaptchaSiteKey) return;
 
-    if (document.querySelector("#wsa-recaptcha-enterprise")) return;
+    if (document.querySelector("#wsa-recaptcha")) return;
 
     const script = document.createElement("script");
-    script.id = "wsa-recaptcha-enterprise";
-    script.src = `https://www.google.com/recaptcha/enterprise.js?render=${recaptchaSiteKey}`;
+
+    script.id = "wsa-recaptcha";
+
+    script.src =
+      `https://www.google.com/recaptcha/api.js?render=${recaptchaSiteKey}`;
+
     script.async = true;
     script.defer = true;
 
@@ -141,21 +144,14 @@ const timeOptions = [
     // Default empty token
     let recaptchaToken = "";
 
-    // Generate a Google reCAPTCHA Enterprise token before submitting.
-    // This matches your Google Cloud key type: Website • Score.
-    if (recaptchaSiteKey && window.grecaptcha?.enterprise) {
+    // Generate a Google reCAPTCHA v3 token before submitting.
+    if (recaptchaSiteKey && window.grecaptcha) {
       recaptchaToken = await new Promise((resolve, reject) => {
-        window.grecaptcha.enterprise.ready(async () => {
-          try {
-            const token = await window.grecaptcha.enterprise.execute(
-              recaptchaSiteKey,
-              { action: "webform_submit" }
-            );
-
-            resolve(token);
-          } catch (error) {
-            reject(error);
-          }
+        window.grecaptcha.ready(() => {
+          window.grecaptcha
+            .execute(recaptchaSiteKey, { action: "webform_submit" })
+            .then(resolve)
+            .catch(reject);
         });
       });
     }
